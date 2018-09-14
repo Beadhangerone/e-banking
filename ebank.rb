@@ -2,8 +2,16 @@ require "rubygems"
 require "watir"
 require "open-uri"
 require "./account"
+require "./transaction"
+
+def toHash(obj)
+  hash = {}
+  obj.instance_variables.each {|var| hash[var[1..-1]] = obj.instance_variable_get var}
+  hash
+end
 
 def click(element)
+  # puts(element.text)
   element.wait_until(&:present?).click!
   return element
 end
@@ -28,9 +36,7 @@ click(wait(b.link(id: 'step3'))) #Go to the 'all accounts' page
 sleep(1)
 acc_boxes = b.elements(css: 'div[ng-repeat="account in accBalanace"]')
 puts "You have #{acc_boxes.length} accounts:"
-@accounts = []
 acc_boxes.each{|acc_box|
-  # puts '--------------------------'
   click(wait(acc_box.element(css:'div.bg-circle-acc a'))) #Go to the 'account info' page
   sleep(1)
   new_acc = Account.new
@@ -41,6 +47,29 @@ acc_boxes.each{|acc_box|
   new_acc.category = b.element(css:'dd[ng-if="model.acc.category"]').text
   new_acc.role = b.element(css:'dd[ng-bind="model.custAcc.ibRoleId"]').text
 
-  puts JSON.pretty_generate(new_acc.to_hash)
-  click(wait(b.button(class:'btn-arrow-back')))#Go back
+  puts '--------------------------------------------------------'
+  puts JSON.pretty_generate(toHash(new_acc)) #display account info
+
+  click(b.link(href:'/EBank/accounts/statement/new')) #Go to the 'statements' page
+  click(b.form(name:'form').button(class:'dropdown-toggle')) #Set filters
+  click(wait(b.ul(class:['dropdown-menu', 'inner'])).span(text:new_acc.name))
+  wait(b.element(css: 'div#sg-date-from').text_field()).set('01/01/1900')
+  b.send_keys :enter
+
+  # Get all transactions
+  transactions = wait(b.table(id:'accountStatements')).elements(css:'tbody tr[ng-repeat="row in dataSource.filteredData | limitTo:dataSource.itemsToDisplay"]')
+  puts '--------------------------------------------------------'
+  puts("This account has #{transactions.length} transactions:")
+  transactions.each {|t|
+    trans = Transaction.new
+    trans.date = t.element(css:'span[bo-bind="row.dateTime | sgDate"]').text
+    trans.amount = Transaction.get_amount(t)
+    trans.description = Transaction.get_desc(t)
+    puts '--------------------------------------------------------'
+    puts JSON.pretty_generate(toHash(trans)) #display account info
+  }
+
+
+  click(wait(b.link(href:'/EBank/accounts')))#Go back
 }
+sleep(5)
