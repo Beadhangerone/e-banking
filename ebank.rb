@@ -1,30 +1,11 @@
 require 'rubygems'
 require 'watir'
+require 'nokogiri'
 require 'open-uri'
 require './account'
 require './transaction'
 require './captcha'
-
-def toHash(obj)
-  hash = {}
-  obj.instance_variables.each { |var| hash[var[1..-1]] = obj.instance_variable_get var }
-  hash
-end
-
-def click(element)
-  # puts(element.text)
-  element.wait_until(&:present?).click!
-  element
-end
-
-def wait(element)
-  nil until element.present?
-  element
-end
-
-def separator(n)
-  puts '-' * n
-end
+require './common'
 
 # Captcha
 puts 'To start using this software, please answer this math question (using numbers):'
@@ -67,7 +48,8 @@ acc_boxes.each do |acc_box|
   wait(b.element(css: 'div#sg-date-from').text_field).set('01/01/1900')
   b.send_keys :enter
 
-  transactions = wait(b.table(id: 'accountStatements')).elements(css: 'tbody tr[ng-repeat="row in dataSource.filteredData | limitTo:dataSource.itemsToDisplay"]')
+  transactions = wait(b.table(id: 'accountStatements'))
+                .elements(css: 'tbody tr[ng-repeat="row in dataSource.filteredData | limitTo:dataSource.itemsToDisplay"]')
   tr_len = transactions.length
   separator(40)
   puts("This account has #{tr_len} transactions:")
