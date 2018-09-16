@@ -14,7 +14,7 @@ loop do
   ans = captcha.check(gets)
   break if ans
 end
-
+date = get_period
 # watir config
 client = Selenium::WebDriver::Remote::Http::Default.new
 client.read_timeout = 120 # seconds
@@ -35,6 +35,7 @@ puts "You have #{acc_boxes.length} accounts:"
 info = { accounts: [] }
 File.open('info.json', 'w')
 acc_boxes.each do |acc_box|
+  separator(40)
   click(wait(acc_box.element(css: 'div.bg-circle-acc a'))) # Go to the 'account info' page
   sleep(1)
   new_acc = Account.new
@@ -45,14 +46,13 @@ acc_boxes.each do |acc_box|
   click(b.link(href: '/EBank/accounts/statement/new')) # Go to the 'statements' page
   click(b.form(name: 'form').button(class: 'dropdown-toggle')) # Set filters
   click(wait(b.ul(class: ['dropdown-menu', 'inner'])).span(text: new_acc.name))
-  wait(b.element(css: 'div#sg-date-from').text_field).set('01/01/1900')
+  wait(b.element(css: 'div#sg-date-from').text_field).set(date)
   b.send_keys :enter
 
   transactions = wait(b.table(id: 'accountStatements'))
                 .elements(css: 'tbody tr[ng-repeat="row in dataSource.filteredData | limitTo:dataSource.itemsToDisplay"]')
   tr_len = transactions.length
-  separator(40)
-  puts("This account has #{tr_len} transactions:")
+  puts("#{tr_len} transactions found:")
   transactions.each_with_index do |t, i|
     trans = Transaction.new
     trans.set_attrs(t)

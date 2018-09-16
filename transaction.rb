@@ -6,7 +6,7 @@ class Transaction
   def set_attrs(b)
     @date = parse(b, 'span[bo-bind="row.dateTime | sgDate"]')[0].text
     @amount = get_amount(b)
-    @description = get_desc(b) # Try without self
+    @description = get_desc(b)
   end
 
   def get_amount(b)
